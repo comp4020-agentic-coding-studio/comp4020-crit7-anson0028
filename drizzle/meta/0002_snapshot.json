@@ -1,0 +1,342 @@
+{
+  "id": "3589f5de-7410-470a-b940-2f0947d8e01a",
+  "prevId": "07c44e01-03d3-4e6f-85b7-e10d9b340ece",
+  "version": "6",
+  "dialect": "sqlite",
+  "tables": {
+    "bookings": {
+      "name": "bookings",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "space_id": {
+          "name": "space_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "date": {
+          "name": "date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "start_min": {
+          "name": "start_min",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "end_min": {
+          "name": "end_min",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "party_size": {
+          "name": "party_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(datetime('now'))"
+        }
+      },
+      "indexes": {
+        "bookings_space_date": {
+          "name": "bookings_space_date",
+          "columns": [
+            "space_id",
+            "date"
+          ],
+          "isUnique": false
+        },
+        "bookings_email_date": {
+          "name": "bookings_email_date",
+          "columns": [
+            "email",
+            "date"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "bookings_space_id_spaces_id_fk": {
+          "name": "bookings_space_id_spaces_id_fk",
+          "tableFrom": "bookings",
+          "columnsFrom": [
+            "space_id"
+          ],
+          "tableTo": "spaces",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "iso_date": {
+          "name": "iso_date",
+          "value": "\"bookings\".\"date\" GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'"
+        },
+        "ends_after_start": {
+          "name": "ends_after_start",
+          "value": "\"bookings\".\"end_min\" > \"bookings\".\"start_min\""
+        },
+        "within_a_day": {
+          "name": "within_a_day",
+          "value": "\"bookings\".\"start_min\" >= 0 AND \"bookings\".\"end_min\" <= 1440"
+        },
+        "half_hour_slots": {
+          "name": "half_hour_slots",
+          "value": "\"bookings\".\"start_min\" % 30 = 0 AND \"bookings\".\"end_min\" % 30 = 0"
+        },
+        "at_most_two_hours": {
+          "name": "at_most_two_hours",
+          "value": "\"bookings\".\"end_min\" - \"bookings\".\"start_min\" <= 120"
+        },
+        "anu_email": {
+          "name": "anu_email",
+          "value": "lower(\"bookings\".\"email\") LIKE '%@anu.edu.au'"
+        },
+        "party_positive": {
+          "name": "party_positive",
+          "value": "\"bookings\".\"party_size\" >= 1"
+        }
+      }
+    },
+    "libraries": {
+      "name": "libraries",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "messages": {
+      "name": "messages",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(datetime('now'))"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "opening_hours": {
+      "name": "opening_hours",
+      "columns": {
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "weekday": {
+          "name": "weekday",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "open_min": {
+          "name": "open_min",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "close_min": {
+          "name": "close_min",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "opening_hours_library_id_libraries_id_fk": {
+          "name": "opening_hours_library_id_libraries_id_fk",
+          "tableFrom": "opening_hours",
+          "columnsFrom": [
+            "library_id"
+          ],
+          "tableTo": "libraries",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "opening_hours_library_id_weekday_pk": {
+          "columns": [
+            "library_id",
+            "weekday"
+          ],
+          "name": "opening_hours_library_id_weekday_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "weekday_range": {
+          "name": "weekday_range",
+          "value": "\"opening_hours\".\"weekday\" BETWEEN 0 AND 6"
+        },
+        "hours_order": {
+          "name": "hours_order",
+          "value": "0 <= \"opening_hours\".\"open_min\" AND \"opening_hours\".\"open_min\" < \"opening_hours\".\"close_min\" AND \"opening_hours\".\"close_min\" <= 1440"
+        }
+      }
+    },
+    "spaces": {
+      "name": "spaces",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "capacity": {
+          "name": "capacity",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "spaces_library": {
+          "name": "spaces_library",
+          "columns": [
+            "library_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "spaces_library_id_libraries_id_fk": {
+          "name": "spaces_library_id_libraries_id_fk",
+          "tableFrom": "spaces",
+          "columnsFrom": [
+            "library_id"
+          ],
+          "tableTo": "libraries",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "capacity_positive": {
+          "name": "capacity_positive",
+          "value": "\"spaces\".\"capacity\" > 0"
+        }
+      }
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}
