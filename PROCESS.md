@@ -1,54 +1,40 @@
 # Process overview
 
-<!-- TEMPLATE: this file is a shape to fill in, not a form. Replace everything
-     in it with your own overview, and delete this comment — `pnpm
-     check:evidence` will remind you if it's still here. -->
-
-Written by you, for a reader: how you got from the brief to the harness and
-agentic workflow behind this submission. Markers read this file and follow its
-citations; they don't trawl the repo for evidence you didn't point at.
-
-This file is the shape; the course site's
-[assessment page](https://comp.anu.edu.au/courses/comp4020-agentic-coding-studio/topics/assessment/#what-you-submit)
-is the requirement, and its
-[word counts](https://comp.anu.edu.au/courses/comp4020-agentic-coding-studio/topics/assessment/#word-counts)
-cover every deliverable.
-
 ## What I built
 
-A sentence or two. `README.md` is where the account of what the app is and what
-good means here lives; this file is how you got there.
+A study room finder for the ANU Library. The Library's booking page shows a
+library's rooms against the day's hours and leaves you to find the gap. Here you
+say how many of you, for how long and when you're free, and it lists the spaces
+that fit, one per start time. The 81 spaces and their hours are the Library's,
+copied from LibCal
+([`d4fe20f`](https://github.com/comp4020-agentic-coding-studio/comp4020-crit7-anson0028/commit/d4fe20f)).
 
 ## How I got here
 
-The account of the process: how the work actually went, and how you knew the
-result was right. Tell it in whatever order makes it clear. A weekly prototype
-needs a paragraph or two; an assignment needs more.
+The rules went into the database first. A rule about one booking is a CHECK:
+half-hour slots, two hours at most, an anu.edu.au email. A rule that needs other
+rows is a trigger: no overlap, two hours per person per day, room capacity,
+opening hours
+([`d4fe20f`](https://github.com/comp4020-agentic-coding-studio/comp4020-crit7-anson0028/commit/d4fe20f)).
+Only the two date rules stay in code: they depend on today's date. Trying each
+rule by hand caught a right refusal with the wrong reason: a three-hour booking
+came back as "daily limit", because SQLite runs triggers before CHECKs.
 
-Cite the record as you go, as links whose text is the commit hash or range and
-whose target is this repo's commit or compare URL, so a reader clicks straight
-to the evidence:
+The spec drives the built server over HTTP
+([`8a53a98`](https://github.com/comp4020-agentic-coding-studio/comp4020-crit7-anson0028/commit/8a53a98)).
+Two tests passed for the wrong reason. "Keeps across reload" found the room's
+name in the booking form's dropdown, not in the list of bookings. "Won't cancel
+someone else's" got a 404 because the cancel route didn't exist yet. Both now
+look in the right place. I broke the overlap rule, the 14-day window, the sort
+and cancel ownership one at a time, and each turned a named test red.
 
-- one commit: [`a1b2c3d`](https://github.com/YOUR-ORG/YOUR-REPO/commit/a1b2c3d)
-- a range:
-  [`a1b2c3d...e4f5a6b`](https://github.com/YOUR-ORG/YOUR-REPO/compare/a1b2c3d...e4f5a6b)
+The finder's first answer was twelve rooms, all at 13:00. The test for one room
+per start time went in red before the fix.
 
-To pair a prompt with the commit it produced, quote the prompt (curated, not a
-full transcript) next to the citation:
+The pages borrow their search bar from Airbnb and OpenTable
+([`4cb8476`](https://github.com/comp4020-agentic-coding-studio/comp4020-crit7-anson0028/commit/4cb8476)).
 
-> the prompt, verbatim
+## Thin spots
 
-Screenshots are welcome where one carries the point better than a sentence does.
-Commit the file to this repo and link it with a **relative** path, which is what
-makes it render on GitHub: `![alt text](docs/before.png)`. Images don't count
-towards the word count and don't replace the citation.
-
-## Before you ship
-
-`pnpm check:evidence` verifies that this comment is gone, that your citations
-resolve to real commits, that a crit week's reflection entry is in
-`reflections/`, and that your `CLAUDE.md` is there. It checks that your account
-is traceable, not that it is good: that is the marker's call.
-
-Images aren't checked: unlike a citation whose SHA doesn't resolve, a broken
-image is visible the moment this file is rendered on GitHub.
+There is no sign-in. Anyone who types an email sees its bookings and can cancel
+them, and the page says so.
