@@ -1,53 +1,134 @@
 ---
-import { listMessages } from "../lib/db";
-import "../styles.css";
+import Layout from "../components/Layout.astro";
+import Prototype from "../components/Prototype.astro";
+import { REASONS, WINDOW_DAYS, addDays, canberraNow, listLibraries, toClock } from "../lib/bookings";
+import { DURATIONS, findOptions, parseQuery } from "../lib/finder";
 
-const messages = listMessages();
+const now = canberraNow();
+const libraries = listLibraries();
+const query = parseQuery(Astro.url.searchParams);
+const answer = query ? findOptions(query, now) : null;
+
+const p = Astro.url.searchParams;
+const form = {
+  date: p.get("date") ?? (now.minutes < 18 * 60 ? now.date : addDays(now.date, 1)),
+  from: p.get("from") ?? "09:00",
+  until: p.get("until") ?? "18:00",
+  minutes: Number(p.get("minutes") ?? 60),
+  people: Number(p.get("people") ?? 2),
+  library: p.get("library") ?? "",
+  email: p.get("email") ?? "",
+};
+
+const day = (iso: string) =>
+  new Intl.DateTimeFormat("en-AU", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(
+    new Date(`${iso}T12:00:00Z`),
+  );
+const length = (minutes: number) =>
+  minutes % 60 === 0 ? `${minutes / 60} h` : minutes > 60 ? `${Math.floor(minutes / 60)} h ${minutes % 60} min` : `${minutes} min`;
+const libraryName = (id?: string) => libraries.find((l) => l.id === id)?.name ?? "any library";
 ---
 
-<!doctype html>
-<html lang="en-AU">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>COMP4020 prototype</title>
-  </head>
-  <body>
-    <nav aria-label="site">
-      <a href="/">Guestbook</a>
-      <a href="/readme/">About</a>
-    </nav>
-    <main>
-      <h1>Guestbook</h1>
-      <p>
-        A minimal full-stack starter: messages live in SQLite on the machine's
-        volume (state survives a reload and a redeploy), and new messages
-        appear in every open tab over a server-sent-events stream — open this
-        page twice and sign it in one. Replace all of this with your own
-        prototype.
+<Layout title="Find a study room · Study room finder" current="find">
+  <h1>Find a study room</h1>
+  <p class="lead">
+    The Library's own booking page shows every room against every hour and leaves you to find the gap. Say how many of
+    you, for how long, and when you're free, and you get the rooms that fit.
+  </p>
+
+  <form method="get" action="/" class="finder search">
+    <div class="field">
+      <label for="people">People</label>
+      <input id="people" name="people" type="number" required min="1" max="8" value={form.people} />
+    </div>
+    <div class="field">
+      <label for="minutes">For</label>
+      <select id="minutes" name="minutes">
+        {DURATIONS.map((m) => <option value={m} selected={m === form.minutes}>{length(m)}</option>)}
+      </select>
+    </div>
+    <div class="field">
+      <label for="date">On</label>
+      <input id="date" name="date" type="date" required min={now.date} max={addDays(now.date, WINDOW_DAYS)} value={form.date} />
+    </div>
+    <div class="field">
+      <label for="from">From</label>
+      <input id="from" name="from" type="time" required step="1800" value={form.from} />
+    </div>
+    <div class="field">
+      <label for="until">Until</label>
+      <input id="until" name="until" type="time" required step="1800" value={form.until} />
+    </div>
+    <div class="field">
+      <label for="library">Library</label>
+      <select id="library" name="library">
+        <option value="">Any</option>
+        {libraries.map((l) => <option value={l.id} selected={l.id === form.library}>{l.name.replace(" Library", "")}</option>)}
+      </select>
+    </div>
+    <div class="field wide">
+      <label for="email">ANU email</label>
+      <input id="email" name="email" type="email" required autocomplete="email" placeholder="u1234567@anu.edu.au" value={form.email} />
+    </div>
+    <div class="submit"><button class="btn-primary">Find rooms</button></div>
+  </form>
+  <Prototype />
+
+  {
+    answer && answer.refused && (
+      <p class="empty" role="status" data-refused={answer.refused}>
+        {answer.refused === "daily_limit"
+          ? `You have ${answer.remaining} minutes left on ${day(query!.date)}, so nothing ${length(query!.minutes)} long fits.`
+          : REASONS[answer.refused]}
       </p>
-      <form method="post" action="/api/messages">
-        <label for="body">Leave a message</label>
-        <input id="body" name="body" required maxlength="500" />
-        <button>Sign</button>
-      </form>
-      <ul id="messages">
-        {messages.map((message) => <li>{message.body}</li>)}
-      </ul>
-    </main>
-    <script>
-      // The live half of the demo: subscribe to the SSE stream and prepend
-      // messages as they arrive. The form itself needs none of this — its
-      // POST + redirect re-renders the submitting tab from SQLite; this
-      // stream is how every other tab finds out.
-      const list = document.querySelector("#messages");
-      const source = new EventSource("/api/events");
-      source.addEventListener("message", (event) => {
-        const message = JSON.parse(event.data);
-        const item = document.createElement("li");
-        item.textContent = message.body;
-        list?.prepend(item);
-      });
-    </script>
-  </body>
-</html>
+    )
+  }
+
+  {
+    answer && !answer.refused && answer.options.length === 0 && (
+      <p class="empty" role="status">
+        Nothing free for {query!.people} for {length(query!.minutes)} on {day(query!.date)} between {toClock(query!.fromMin)} and{" "}
+        {toClock(query!.untilMin)}. Try a wider window or another day.
+      </p>
+    )
+  }
+
+  {
+    answer && answer.options.length > 0 && (
+      <section class="results" aria-labelledby="options-heading">
+        <div class="results-head">
+          <h2 id="options-heading">{day(query!.date)}</h2>
+          <p>
+            {length(query!.minutes)} · {query!.people} {query!.people === 1 ? "person" : "people"} · {libraryName(query!.library)}
+            {answer.total > answer.options.length && <> · the {answer.options.length} earliest of {answer.total} start times</>}
+          </p>
+        </div>
+        <ol id="options">
+          {answer.options.map((o) => (
+            <li>
+              <span class="when">{toClock(o.startMin)}–{toClock(o.endMin)}</span>
+              <span class="room">{o.space}</span>
+              <span class="meta">
+                {o.library} · holds {o.capacity}
+              </span>
+              {o.others > 0 && (
+                <span class="others">
+                  +{o.others} more {o.others === 1 ? "room" : "rooms"} free then
+                </span>
+              )}
+              <form method="post" action="/api/bookings">
+                <input type="hidden" name="spaceId" value={o.spaceId} />
+                <input type="hidden" name="date" value={query!.date} />
+                <input type="hidden" name="start" value={toClock(o.startMin)} />
+                <input type="hidden" name="end" value={toClock(o.endMin)} />
+                <input type="hidden" name="partySize" value={query!.people} />
+                <input type="hidden" name="email" value={query!.email ?? ""} />
+                <button aria-label={`Book ${o.space}, ${o.library}, ${toClock(o.startMin)} to ${toClock(o.endMin)}`}>Book this room</button>
+              </form>
+            </li>
+          ))}
+        </ol>
+      </section>
+    )
+  }
+</Layout>

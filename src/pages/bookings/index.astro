@@ -1,0 +1,58 @@
+---
+import Layout from "../../components/Layout.astro";
+import Prototype from "../../components/Prototype.astro";
+import { listBookings, toClock } from "../../lib/bookings";
+
+const email = (Astro.url.searchParams.get("email") ?? "").trim();
+const rows = email ? listBookings(email) : [];
+const day = (iso: string) =>
+  new Intl.DateTimeFormat("en-AU", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(
+    new Date(`${iso}T12:00:00Z`),
+  );
+---
+
+<Layout title="Your bookings · Study room finder" current="bookings">
+  <h1>Your bookings</h1>
+  <Prototype>There's no sign-in either: anyone who types an email here sees its bookings and can cancel them.</Prototype>
+  <div class="panel">
+    <form method="get" action="/bookings/" class="lookup">
+      <div class="field">
+        <label for="email">ANU email</label>
+        <input id="email" name="email" type="email" required autocomplete="email" value={email} placeholder="u1234567@anu.edu.au" />
+      </div>
+      <button>Show my bookings</button>
+    </form>
+  </div>
+  {
+    email && rows.length === 0 && (
+      <p class="empty">
+        No bookings for {email} yet. <a href="/">Find a room</a>.
+      </p>
+    )
+  }
+  {
+    rows.length > 0 && (
+      <ol id="bookings">
+        {rows.map((row) => (
+          <li>
+            <span class="when">
+              {toClock(row.startMin)}–{toClock(row.endMin)}
+              <small>{day(row.date)}</small>
+            </span>
+            <span class="room">
+              <strong>{row.space}</strong>
+              <small>
+                {row.library} · {row.partySize} {row.partySize === 1 ? "person" : "people"}
+              </small>
+            </span>
+            <form method="post" action="/api/bookings/cancel">
+              <input type="hidden" name="id" value={row.id} />
+              <input type="hidden" name="email" value={email} />
+              <button aria-label={`Cancel ${row.space}, ${day(row.date)}, ${toClock(row.startMin)}`}>Cancel</button>
+            </form>
+          </li>
+        ))}
+      </ol>
+    )
+  }
+</Layout>

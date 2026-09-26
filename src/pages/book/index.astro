@@ -1,0 +1,77 @@
+---
+import Layout from "../../components/Layout.astro";
+import Prototype from "../../components/Prototype.astro";
+import { WINDOW_DAYS, addDays, canberraToday, listLibraries, listSpaces } from "../../lib/bookings";
+
+const today = canberraToday();
+const libraries = listLibraries().map((library) => ({ ...library, spaces: listSpaces(library.id) }));
+const wanted = Astro.url.searchParams.get("library");
+const initial = libraries.find((l) => l.id === wanted)?.id ?? libraries[0]?.id;
+---
+
+<Layout title="Book a room · Study room finder" current="book">
+  <h1>Book a room</h1>
+  <p class="lead">Already know the room you want? Up to two hours a day, up to two weeks ahead, on the hour or the half hour.</p>
+  <Prototype />
+  <div class="panel">
+    <form method="post" action="/api/bookings" class="fields">
+      <div class="field wide">
+        <label for="library">Library</label>
+        <select id="library">
+          {libraries.map((l) => <option value={l.id} selected={l.id === initial}>{l.name}</option>)}
+        </select>
+      </div>
+      <div class="field wide">
+        <label for="spaceId">Room</label>
+        <select id="spaceId" name="spaceId" required>
+          {
+            libraries.map((library) => (
+              <optgroup label={library.name} data-library={library.id}>
+                {library.spaces.map((space) => (
+                  <option value={space.id}>
+                    {space.name} · {space.capacity} {space.capacity === 1 ? "person" : "people"}
+                  </option>
+                ))}
+              </optgroup>
+            ))
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label for="date">Date</label>
+        <input id="date" name="date" type="date" required min={today} max={addDays(today, WINDOW_DAYS)} value={addDays(today, 1)} />
+      </div>
+      <div class="field">
+        <label for="start">From</label>
+        <input id="start" name="start" type="time" required step="1800" value="10:00" />
+      </div>
+      <div class="field">
+        <label for="end">Until</label>
+        <input id="end" name="end" type="time" required step="1800" value="11:00" />
+      </div>
+      <div class="field">
+        <label for="partySize">People</label>
+        <input id="partySize" name="partySize" type="number" required min="1" max="8" value="1" />
+      </div>
+      <div class="field wide">
+        <label for="email">ANU email</label>
+        <input id="email" name="email" type="email" required autocomplete="email" placeholder="u1234567@anu.edu.au" />
+      </div>
+      <div class="field"><button>Book</button></div>
+    </form>
+  </div>
+</Layout>
+
+<script>
+  const library = document.querySelector<HTMLSelectElement>("#library");
+  const room = document.querySelector<HTMLSelectElement>("#spaceId");
+  if (library && room) {
+    const groups = [...room.querySelectorAll("optgroup")].map((group) => group.cloneNode(true) as HTMLOptGroupElement);
+    const show = () => {
+      const group = groups.find((g) => g.dataset.library === library.value);
+      room.replaceChildren(...(group ? [...group.children].map((option) => option.cloneNode(true)) : []));
+    };
+    library.addEventListener("change", show);
+    show();
+  }
+</script>

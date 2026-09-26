@@ -1,0 +1,42 @@
+---
+import "../styles.css";
+
+interface Props {
+  title: string;
+  current?: "find" | "book" | "bookings" | "about";
+}
+
+const { title, current } = Astro.props;
+const links = [
+  { key: "find", href: "/", label: "Find a room" },
+  { key: "book", href: "/book/", label: "Book a room" },
+  { key: "bookings", href: "/bookings/", label: "Your bookings" },
+  { key: "about", href: "/readme/", label: "About" },
+];
+---
+
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="/">
+          <span class="brand-mark" aria-hidden="true">R</span>
+          <span>Study room finder</span>
+          <span class="badge">Prototype</span>
+        </a>
+        <nav aria-label="site">
+          {links.map((link) => <a href={link.href} aria-current={current === link.key ? "page" : undefined}>{link.label}</a>)}
+        </nav>
+      </div>
+    </header>
+    <main>
+      <slot />
+    </main>
+  </body>
+</html>
